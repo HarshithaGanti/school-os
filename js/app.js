@@ -5,6 +5,7 @@ const state = {
   selectedDate: '2026-08-17',
   month: 7,
   year: 2026,
+  darkMode: localStorage.getItem('schoolos-dark') === 'true',
 };
 
 const icons = {
@@ -29,6 +30,13 @@ const icons = {
   file: 'file-text',
   chart: 'chart-no-axes-combined',
   close: 'x',
+  fees: 'wallet-cards',
+  food: 'utensils-crossed',
+  lost: 'search-x',
+  personal: 'sticky-note',
+  moon: 'moon',
+  sun: 'sun',
+  external: 'external-link',
 };
 
 const roleNames = {
@@ -53,6 +61,10 @@ const pageMeta = {
   exams: { title: 'Exams', subtitle: 'Marks, question papers, answer keys and performance.' },
   notes: { title: 'Notes', subtitle: 'Your academic notes, organised by subject and chapter.' },
   announcements: { title: 'Announcements', subtitle: 'Important school updates, approvals and notices.' },
+  fees: { title: 'Fees', subtitle: 'View fee schedules, dues and payment status.' },
+  food: { title: 'Food', subtitle: "This week's school menu and meal information." },
+  lostfound: { title: 'Lost & Found', subtitle: 'Browse recently reported items and return them to their owners.' },
+  personal: { title: 'Personal Notes', subtitle: 'Save quick reminders, ideas and school-related notes.' },
 };
 
 const homework = [
@@ -72,6 +84,11 @@ const studentAttendance = [
   { name: 'Isha Mehta', pct: 94, status: 'present' },
 ];
 
+const teacherStudents = [
+  'Aarav Sharma','Ananya Rao','Arjun Patel','Diya Singh','Isha Mehta','Kabir Menon','Kiara Shah','Lakshya Reddy','Meera Nair','Neil Kapoor','Nisha Verma','Om Prakash','Parth Iyer','Prisha Jain','Rahul Das','Rhea Malhotra','Rohan Gupta','Saanvi Rao','Samarth Kulkarni','Sara Khan','Shaurya Bose','Siya Reddy','Tanmay Joshi','Tara Mehta','Uday Kumar','Vanya Shah','Vedant Rao','Vihaan Patel','Yash Mehta','Zoya Ali','Aditya Nair','Anika Kapoor','Devansh Singh','Ira Menon','Kunal Verma'
+].map((name, i) => ({name, pct: [96,89,61,68,94,92,88,73,97,91,84,62,95,79,93,87,72,90,98,76,94,69,81,92,64,86,91,74,97,88,83,95,71,93,89][i]}));
+
+
 const marks = [
   { subject: 'Mathematics', pt1: 74, pt2: 82, half: 86 },
   { subject: 'Physics', pt1: 85, pt2: 91, half: 89 },
@@ -87,6 +104,27 @@ const notes = [
   { subject: 'Mathematics', chapter: 'Chapter 4 • Algebra', type: 'PDF', enabled: true },
 ];
 
+
+const notesBySubject = {
+  Mathematics: [
+    {id:101, chapter:'Chapter 1 • Real Numbers', type:'PDF', enabled:true, file:'mathematics-chapter-1.pdf'},
+    {id:102, chapter:'Chapter 2 • Polynomials', type:'PDF', enabled:true, file:'mathematics-chapter-2.pdf'},
+    {id:103, chapter:'Chapter 3 • Pair of Linear Equations', type:'PDF', enabled:false, file:'mathematics-chapter-3.pdf'},
+  ],
+  Physics: [
+    {id:201, chapter:'Chapter 1 • Motion', type:'PDF', enabled:true, file:'physics-chapter-1.pdf'},
+    {id:202, chapter:'Chapter 2 • Force and Laws', type:'PDF', enabled:true, file:'physics-chapter-2.pdf'},
+    {id:203, chapter:'Chapter 3 • Gravitation', type:'PDF', enabled:false, file:'physics-chapter-3.pdf'},
+  ],
+  English: [
+    {id:301, chapter:'Chapter 1 • The Fun They Had', type:'PDF', enabled:true, file:'english-chapter-1.pdf'},
+    {id:302, chapter:'Chapter 7 • The Last Leaf', type:'PDF', enabled:true, file:'english-chapter-7.pdf'},
+  ],
+  'Computer Science': [
+    {id:401, chapter:'Chapter 1 • Python Basics', type:'PDF', enabled:true, file:'computer-science-chapter-1.pdf'},
+    {id:402, chapter:'Chapter 2 • Loops & Control Flow', type:'PDF', enabled:false, file:'computer-science-chapter-2.pdf'},
+  ]
+};
 const announcements = [
   { title: 'Inter-School Science Exhibition', date: '16 Aug', audience: 'Classes 8–10', status: 'Published' },
   { title: 'Independence Day Holiday', date: '14 Aug', audience: 'All students', status: 'Published' },
@@ -110,13 +148,17 @@ function navItems() {
     ['exams', 'Exams', icons.exams],
     ['notes', 'Notes', icons.notes],
     ['announcements', 'Announcements', icons.announcements],
+    ['fees', 'Fees', icons.fees],
+    ['food', 'Food', icons.food],
+    ['lostfound', 'Lost & Found', icons.lost],
+    ['personal', 'Personal Notes', icons.personal],
   ];
 }
 
 function shell() {
   const meta = roleMeta[state.role];
   return `
-    <div class="app-shell">
+    <div class="app-shell dark-mode-shell">
       <aside id="sidebar" class="sidebar flex flex-col p-4">
         <div class="flex items-center gap-3 px-2 py-2 mb-6">
           <div class="w-10 h-10 rounded-xl bg-black text-white grid place-items-center font-extrabold">S</div>
@@ -157,6 +199,7 @@ function shell() {
           <div class="md:hidden font-bold text-sm">SchoolOS</div>
         </div>
         <div class="flex items-center gap-2">
+          <button onclick="toggleDarkMode()" class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl" title="Toggle dark mode">${icon(state.darkMode ? icons.sun : icons.moon,18)}</button>
           <button class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl" title="Search">${icon(icons.search,18)}</button>
           <button class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl relative" title="Notifications">
             ${icon(icons.bell,18)}<span class="absolute -top-1 -right-1 w-4 h-4 bg-black text-white rounded-full text-[9px] grid place-items-center">3</span>
@@ -202,7 +245,7 @@ function pageHeader(actions = '') {
 function renderPage() {
   const root = document.getElementById('page-root');
   const page = state.activePage;
-  const view = ({ dashboard: dashboardPage, homework: homeworkPage, attendance: attendancePage, calendar: calendarPage, exams: examsPage, notes: notesPage, announcements: announcementsPage })[page];
+  const view = ({ dashboard: dashboardPage, homework: homeworkPage, attendance: attendancePage, calendar: calendarPage, exams: examsPage, notes: notesPage, announcements: announcementsPage, fees: feesPage, food: foodPage, lostfound: lostFoundPage, personal: personalNotesPage })[page];
   root.innerHTML = view();
   initIcons();
 }
@@ -338,11 +381,16 @@ function attendancePage() {
   const isAdmin = state.role === 'admin';
   if (isTeacher) return `
     ${pageHeader(`<button onclick="submitToast('Attendance submitted to admin')" class="btn btn-primary">Submit attendance ${icon(icons.send,16)}</button>`)}
-    <div class="grid grid-cols-1 xl:grid-cols-[.8fr_1.2fr] gap-5">
-      <section class="card p-5"><div class="flex items-center justify-between mb-4"><div><h2 class="heading text-xl font-extrabold">8A Attendance</h2><p class="text-xs text-slate-500 mt-1">17 August 2026 • Morning attendance</p></div><span class="badge badge-blue">37 / 40 present</span></div><input class="input mb-3" placeholder="Search student..." />
-      ${studentAttendance.slice(1).map((s, idx) => `<label class="flex items-center justify-between py-3 border-b border-slate-100 last:border-0 cursor-pointer"><div class="flex items-center gap-3"><input type="checkbox" ${idx===2||idx===3?'':'checked'} class="w-4 h-4 accent-pink-500"><div><div class="font-bold text-sm">${s.name}</div><div class="text-[11px] text-slate-500">Attendance ${s.pct}%</div></div></div>${attendanceBadge(s.pct)}</label>`).join('')}</section>
-      <section class="card p-5"><h2 class="heading text-xl font-extrabold mb-5">Attendance calendar</h2>${attendanceCalendar()}</section>
-    </div>`;
+    <section class="card p-5">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+        <div><h2 class="heading text-xl font-extrabold">8A Attendance</h2><p class="text-xs text-slate-500 mt-1">17 August 2026 • Morning attendance • 35 students</p></div>
+        <div class="flex items-center gap-2"><span class="badge badge-green">31 present</span><span class="badge badge-red">4 absent</span></div>
+      </div>
+      <div class="soft-card p-3 mb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><input class="input sm:max-w-sm" placeholder="Search student..." /><div class="text-xs text-slate-500">Tick students who are <strong class="text-slate-700">present</strong>.</div></div>
+      <div class="space-y-2">
+        ${teacherStudents.map((s, idx) => `<label class="attendance-student ${s.pct<65?'att-low':s.pct<75?'att-warning':''} flex items-center gap-3 p-3 rounded-xl cursor-pointer"><input type="checkbox" ${[2,11,19,27].includes(idx)?'':'checked'} class="w-4 h-4 accent-[#004C99]"><div class="flex-1 min-w-0"><div class="font-bold text-sm">${s.name}</div><div class="text-[11px] text-slate-500">Roll No. ${idx+1}</div></div><div class="font-noto font-extrabold text-sm">${s.pct}%</div></label>`).join('')}
+      </div>
+    </section>`;
   if (isAdmin) return `
     ${pageHeader(`<button onclick="approveToast('All attendance approved')" class="btn btn-success">Approve selected ${icon(icons.check,16)}</button>`)}
     <section class="card p-5"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Attendance review</h2><p class="text-xs text-slate-500 mt-1">Check teacher submissions before publishing.</p></div><span class="badge badge-yellow">2 classes pending</span></div>
@@ -385,9 +433,13 @@ function examsPage() {
 function notesPage() {
   const isTeacher = state.role === 'teacher';
   const isAdmin = state.role === 'admin';
-  return `${pageHeader(isTeacher ? `<button class="btn btn-primary" onclick="showToast('Upload UI ready for integration')">${icon(icons.plus,16)} Upload notes</button>` : '')}
-  <section class="card p-5"><div class="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Notes library</h2><p class="text-xs text-slate-500 mt-1">Teachers upload once. Students access approved chapters.</p></div><select class="input md:w-44"><option>All subjects</option><option>Physics</option><option>English</option><option>Mathematics</option></select></div>
-  <div class="space-y-3">${notes.map(n=>`<div class="soft-card p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-pinkbrand/10 grid place-items-center text-pinkbrand">${icon(icons.file,18)}</div><div><div class="font-bold text-sm">${n.chapter}</div><div class="text-xs text-slate-500">${n.subject} • ${n.type}</div></div></div><div class="flex items-center gap-2">${isTeacher ? `<span class="badge ${n.enabled?'badge-green':'badge-gray'}">${n.enabled?'Enabled':'Locked'}</span><button class="btn btn-soft text-xs">${n.enabled?'Disable':'Enable'}</button>` : isAdmin ? `<span class="badge badge-yellow">Pending approval</span><button onclick="approveToast('Note approved')" class="btn btn-success text-xs">Approve</button>` : n.enabled ? `<span class="badge badge-green">Available</span><button class="btn btn-soft text-xs">Open ${icon(icons.arrow,14)}</button>` : `<span class="badge badge-gray">Locked until next chapter</span>`}</div></div>`).join('')}</div></section>`;
+  const subjects = ['Mathematics','Physics','English','Computer Science'];
+  return `${pageHeader(isTeacher ? `<button class="btn btn-primary" onclick="showToast('Upload notes UI ready for PDF integration')">${icon(icons.plus,16)} Upload notes</button>` : '')}
+  <section class="card p-5"><div class="mb-5"><h2 class="heading text-xl font-extrabold">Notes library</h2><p class="text-xs text-slate-500 mt-1">Each subject has its own chapter library. Students see the approved PDFs directly.</p></div>
+  <div class="space-y-3">${subjects.map(subject=>{
+    const items = notesBySubject[subject] || [];
+    return `<details class="subject-accordion"><summary class="flex items-center justify-between gap-3 p-4 cursor-pointer list-none"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-[#004C99]/10 grid place-items-center text-[#004C99]">${icon(icons.notes,18)}</div><div><div class="font-bold text-sm">${subject}</div><div class="text-xs text-slate-500">${items.length} chapters</div></div></div><span class="text-slate-400">${icon(icons.arrow,16)}</span></summary><div class="px-4 pb-4 pt-1 space-y-2">${items.map(n=>`<div class="soft-card p-3 flex items-center justify-between gap-3"><div class="min-w-0"><div class="font-bold text-sm truncate">${n.chapter}</div><div class="text-[11px] text-slate-500">${n.type} • ${n.enabled ? 'Available' : 'Waiting for approval'}</div></div>${isTeacher ? `<button onclick="toggleNote(${n.id})" class="note-toggle ${n.enabled?'on':''}" title="${n.enabled?'Disable chapter':'Enable chapter'}"><span></span></button>` : isAdmin ? `<div class="flex items-center gap-2"><span class="badge badge-yellow">${n.enabled?'Approved':'Pending'}</span><button onclick="approveToast('Note approved')" class="btn btn-success text-xs">Approve</button></div>` : `<a href="./pdfs/${n.file}" class="btn btn-soft text-xs" onclick="openMockPdf(event, '${n.chapter.replaceAll("'","\\'")}')">Open PDF ${icon(icons.external,14)}</a>`}</div>`).join('')}</div></details>`;
+  }).join('')}</div></section>`;
 }
 
 function announcementsPage() {
@@ -396,6 +448,27 @@ function announcementsPage() {
   return `${pageHeader(isTeacher ? `<button class="btn btn-primary" onclick="showAnnouncementEditor()">${icon(icons.plus,16)} Create announcement</button>` : '')}
   ${isAdmin ? `<div class="card p-5 mb-5"><div class="flex items-center justify-between mb-4"><div><h2 class="heading text-xl font-extrabold">Pending approvals</h2><p class="text-xs text-slate-500 mt-1">Review teacher-created announcements before publishing.</p></div><span class="badge badge-yellow">1 pending</span></div><div class="soft-card p-4"><div class="flex items-start justify-between gap-4"><div><div class="badge badge-blue">Cross-school</div><h3 class="font-bold mt-2">Inter-School Science Exhibition</h3><p class="text-xs text-slate-500 mt-1">Created by Ms. Asha, Mr. Vivek and Dr. Rahul</p></div><div class="flex gap-2"><button class="btn btn-outline text-xs">Reject</button><button onclick="approveToast('Announcement published to app + parent channels')" class="btn btn-success text-xs">Approve & publish</button></div></div></div></div>` : ''}
   <section class="card p-5"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Announcements</h2><p class="text-xs text-slate-500 mt-1">The school's verified communication stream.</p></div><span class="badge badge-blue">${announcements.length} published</span></div>${announcements.map(a=>`<div class="soft-card p-4 mb-3"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><div class="flex items-center gap-2"><span class="badge badge-green">${a.status}</span><span class="text-xs text-slate-500">${a.date}</span></div><h3 class="font-bold mt-2">${a.title}</h3><p class="text-xs text-slate-500 mt-1">Audience: ${a.audience}</p></div><button class="btn btn-soft text-xs">Open ${icon(icons.arrow,14)}</button></div></div>`).join('')}</section>`;
+}
+
+function feesPage() {
+  const rows = [['Term 1 Tuition','₹18,500','Paid'],['Term 2 Tuition','₹18,500','Due 10 Sep'],['Transport','₹6,000','Paid'],['Activity Fee','₹2,000','Paid']];
+  return `${pageHeader()}<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">${metricCard('Total due','₹18,500','Next payment','fees','Due 10 September')}${metricCard('Paid this year','₹26,500','Across 3 invoices','check','Up to date')}${metricCard('Receipt status','100%','Records available','file','Download anytime')}</div><section class="card p-5"><h2 class="heading text-xl font-extrabold mb-4">Fee summary</h2><div class="table-wrap"><table class="app-table"><thead><tr><th>Fee</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="font-bold">${r[0]}</td><td>${r[1]}</td><td><span class="badge ${r[2]==='Paid'?'badge-green':'badge-yellow'}">${r[2]}</span></td><td><button class="btn btn-soft text-xs" onclick="showToast('Fee receipt preview opened')">${r[2]==='Paid'?'View receipt':'View details'}</button></td></tr>`).join('')}</tbody></table></div></section>`;
+}
+
+function foodPage() {
+  const menu = [
+    ['Monday','Idli • Sambar • Fruit','Vegetarian'],['Tuesday','Veg Pulao • Raita • Banana','Vegetarian'],['Wednesday','Chapati • Paneer Curry • Salad','Vegetarian'],['Thursday','Lemon Rice • Dal • Curd','Vegetarian'],['Friday','Veg Noodles • Manchurian • Fruit','Vegetarian']
+  ];
+  return `${pageHeader()}<section class="card p-5"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">This week's menu</h2><p class="text-xs text-slate-500 mt-1">August 17–21, 2026</p></div><span class="badge badge-green">Updated this week</span></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">${menu.map((m,i)=>`<div class="soft-card p-4 ${i===0?'ring-2 ring-[#004C99]/20':''}"><div class="text-xs text-slate-500 font-bold uppercase tracking-wide">${m[0]}</div><div class="w-10 h-10 rounded-xl bg-[#004C99]/10 text-[#004C99] grid place-items-center mt-3">${icon(icons.food,18)}</div><div class="font-bold text-sm mt-3 leading-5">${m[1]}</div><span class="badge badge-blue mt-3">${m[2]}</span></div>`).join('')}</div></section>`;
+}
+
+function lostFoundPage() {
+  const items = [['Black water bottle','Found near library • 15 Aug','Blue cap'],['Geometry box','Found in 8A • 14 Aug','Name label: S. Rao'],['Grey hoodie','Found near auditorium • 12 Aug','Size M']];
+  return `${pageHeader(`<button class="btn btn-primary" onclick="showToast('Lost & found report form opened')">${icon(icons.plus,16)} Report item</button>`)}<section class="card p-5"><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${items.map(x=>`<div class="soft-card p-4"><div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 grid place-items-center">${icon(icons.lost,18)}</div><h3 class="font-bold mt-3">${x[0]}</h3><p class="text-xs text-slate-500 mt-1">${x[1]}</p><div class="text-[11px] font-bold text-slate-600 mt-3">${x[2]}</div><button class="btn btn-soft text-xs mt-4 w-full" onclick="showToast('Claim request sent to the school office')">Claim item</button></div>`).join('')}</div></section>`;
+}
+
+function personalNotesPage() {
+  return `${pageHeader(`<button class="btn btn-primary" onclick="showToast('New personal note created')">${icon(icons.plus,16)} New note</button>`)}<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"><div class="card p-5"><div class="flex items-center justify-between"><span class="badge badge-blue">Study</span><span class="text-xs text-slate-400">Today</span></div><h3 class="font-bold mt-4">Ask about math doubt</h3><p class="text-sm text-slate-500 mt-2">Remember to ask Mr. Vivek about question 7 before Friday.</p></div><div class="card p-5"><div class="flex items-center justify-between"><span class="badge badge-green">Reminder</span><span class="text-xs text-slate-400">Yesterday</span></div><h3 class="font-bold mt-4">Science exhibition</h3><p class="text-sm text-slate-500 mt-2">Bring the prototype model on 30 August.</p></div><div class="card p-5 border-dashed"><button onclick="showToast('New personal note created')" class="w-full h-full min-h-36 grid place-items-center text-slate-400 hover:text-[#004C99]"><div class="text-center">${icon(icons.plus,24)}<div class="font-bold text-sm mt-2">Create another note</div></div></button></div></div>`;
 }
 
 function metricCard(title, value, subtitle, ico, footer) {
@@ -409,6 +482,24 @@ function actionRow(title, sub, button, page) { return `<div class="soft-card p-4
 function approvalRow(type, item, by, page) { return `<div class="soft-card p-4 mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><div class="text-[11px] font-bold uppercase tracking-[.1em] text-slate-400">${type}</div><div class="font-bold text-sm mt-1">${item}</div><div class="text-xs text-slate-500 mt-1">Submitted by ${by}</div></div><button onclick="navigate('${page}')" class="btn btn-soft text-xs">Review ${icon(icons.arrow,14)}</button></div>`; }
 function attendanceBadge(pct) { return pct < 65 ? `<span class="badge badge-red">${pct}%</span>` : pct < 75 ? `<span class="badge badge-yellow">${pct}%</span>` : `<span class="badge badge-green">${pct}%</span>`; }
 function formatSelectedDate() { return new Date(state.selectedDate + 'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+
+function toggleDarkMode() {
+  state.darkMode = !state.darkMode;
+  localStorage.setItem('schoolos-dark', String(state.darkMode));
+  document.documentElement.classList.toggle('dark', state.darkMode);
+  render();
+}
+function toggleNote(id) {
+  for (const list of Object.values(notesBySubject)) {
+    const item=list.find(n=>n.id===id);
+    if(item){ item.enabled=!item.enabled; break; }
+  }
+  renderPage();
+}
+function openMockPdf(e, title) {
+  e.preventDefault();
+  showToast(`${title} PDF preview opened. Add the real PDF in /pdfs/ when ready.`);
+}
 
 function renderAI() {
   const panel = document.getElementById('ai-panel');
@@ -445,6 +536,7 @@ function submitToast(message) { alert(message); }
 function showHomeworkEditor() { alert('Homework editor modal coming next. The teacher role is already scoped to English • Class 8A.'); }
 function showAnnouncementEditor() { alert('Announcement composer coming next.'); }
 
-window.navigate=navigate; window.changeRole=changeRole; window.toggleSidebar=toggleSidebar; window.toggleAI=toggleAI; window.selectDate=selectDate; window.askAI=askAI; window.submitAI=submitAI; window.approveToast=approveToast; window.submitToast=submitToast; window.showToast=showToast; window.showHomeworkEditor=showHomeworkEditor; window.showAnnouncementEditor=showAnnouncementEditor;
+window.navigate=navigate; window.changeRole=changeRole; window.toggleSidebar=toggleSidebar; window.toggleAI=toggleAI; window.selectDate=selectDate; window.askAI=askAI; window.submitAI=submitAI; window.approveToast=approveToast; window.submitToast=submitToast; window.showToast=showToast; window.showHomeworkEditor=showHomeworkEditor; window.showAnnouncementEditor=showAnnouncementEditor; window.toggleDarkMode=toggleDarkMode; window.toggleNote=toggleNote; window.openMockPdf=openMockPdf;
 
+document.documentElement.classList.toggle('dark', state.darkMode);
 render();
