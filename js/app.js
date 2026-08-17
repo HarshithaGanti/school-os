@@ -40,15 +40,13 @@ const icons = {
 };
 
 const roleNames = {
-  student: 'Student',
-  parent: 'Parent',
+  student: 'Student / Parent',
   teacher: 'Teacher',
   admin: 'Administrator'
 };
 
 const roleMeta = {
-  student: { name: 'Harshitha Ganti', subtitle: 'Class 8A • Roll No. 18', initials: 'HG' },
-  parent: { name: 'Ravi Ganti', subtitle: 'Parent • Harshitha Ganti', initials: 'RG' },
+  student: { name: 'Harshitha Ganti', subtitle: 'Student / Parent • Class 8A • Roll No. 18', initials: 'HG' },
   teacher: { name: 'Asha Rao', subtitle: 'English • Class 8A', initials: 'AR' },
   admin: { name: 'Meera Kapoor', subtitle: 'School Administrator', initials: 'MK' }
 };
@@ -161,9 +159,9 @@ function shell() {
     <div class="app-shell dark-mode-shell">
       <aside id="sidebar" class="sidebar flex flex-col p-4">
         <div class="flex items-center gap-3 px-2 py-2 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-black text-white grid place-items-center font-extrabold">S</div>
+          <div class="w-10 h-10 rounded-xl bg-black text-white grid place-items-center font-extrabold">V</div>
           <div>
-            <div class="font-noto font-extrabold text-[18px]">SchoolOS</div>
+            <div class="font-noto font-extrabold text-[18px]">Vednix</div>
             <div class="text-[11px] font-bold opacity-65 tracking-wide">SMART SCHOOL PLATFORM</div>
           </div>
         </div>
@@ -196,7 +194,7 @@ function shell() {
         <div class="flex items-center gap-3 min-w-0">
           <button onclick="toggleSidebar()" class="mobile-menu btn bg-white/15 text-white px-2.5 py-2 rounded-xl">${icon(icons.menu,18)}</button>
           <div class="hidden md:block font-bold text-sm opacity-90">My School / ${roleNames[state.role]}</div>
-          <div class="md:hidden font-bold text-sm">SchoolOS</div>
+          <div class="md:hidden font-bold text-sm">Vednix</div>
         </div>
         <div class="flex items-center gap-2">
           <button onclick="toggleDarkMode()" class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl" title="Toggle dark mode">${icon(state.darkMode ? icons.sun : icons.moon,18)}</button>
@@ -257,12 +255,11 @@ function dashboardPage() {
 }
 
 function studentParentDashboard() {
-  const isParent = state.role === 'parent';
   return `
     ${pageHeader(`<button onclick="navigate('homework')" class="btn btn-primary">View today's work ${icon(icons.arrow,16)}</button>`)}
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-      ${metricCard('Attendance', isParent ? '94.2%' : '94.2%', 'Current attendance', icons.attendance, 'Good standing')}
+      ${metricCard('Attendance', '94.2%', 'Current attendance', icons.attendance, 'Good standing')}
       ${metricCard('Homework', '3', 'Due this week', icons.homework, '2 due soon')}
       ${metricCard('Next Exam', 'Math', 'Half-Yearly • 22 Aug', icons.exams, '5 days left')}
       ${metricCard('Announcements', '3', 'New since Friday', icons.announcements, 'Read all')}
@@ -413,13 +410,29 @@ function attendanceCalendar() {
 }
 
 function calendarPage() {
-  return `${pageHeader(`<button class="btn btn-primary">${icon(icons.plus,16)} Add event</button>`)}<section class="card p-5">${calendarMarkup('academic')}</section>`;
+  const canEdit = state.role === 'admin' || state.role === 'teacher';
+  return `${pageHeader(canEdit ? `<button onclick="showToast('Academic calendar editor opened')" class="btn btn-primary">${icon(icons.plus,16)} Add event</button>` : '')}<section class="card p-5">${calendarMarkup('academic')}</section>`;
 }
 
 function calendarMarkup(mode) {
   const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const days = Array.from({length:31},(_,i)=>i+1);
-  return `<div class="grid grid-cols-7 gap-2 mb-2">${labels.map(x=>`<div class="text-[11px] font-bold text-slate-400 px-2">${x}</div>`).join('')}</div><div class="calendar-grid">${Array.from({length:5},()=>'<div></div>').join('')}${days.map(d => { const iso=`2026-08-${String(d).padStart(2,'0')}`; const selected=state.selectedDate===iso; const today=d===17; const event=(d===20||d===22||d===31); return `<button onclick="selectDate('${iso}')" class="calendar-day ${selected?'selected':''} ${today?'today':''} text-left"><div class="flex items-center justify-between"><span class="font-bold text-sm">${d}</span>${today?'<span class="badge badge-blue text-[9px]">TODAY</span>':''}</div>${event?`<div class="mt-2 flex items-center gap-1"><span class="calendar-dot bg-pinkbrand"></span><span class="event-text text-[10px] text-slate-500">${d===22?'Half-Yearly':'Event'}</span></div>`:''}</button>`; }).join('')}</div>`;
+  const holidays = [1,8,15,16,22,23,29,30];
+  const events = {20:'School Event',22:'Half-Yearly Exam',31:'Science Exhibition'};
+  return `<div class="grid grid-cols-7 gap-2 mb-2">${labels.map(x=>`<div class="text-[11px] font-bold text-slate-400 px-2">${x}</div>`).join('')}</div>
+    <div class="calendar-grid">${Array.from({length:5},()=>'<div></div>').join('')}${days.map(d => {
+      const iso=`2026-08-${String(d).padStart(2,'0')}`;
+      const selected=state.selectedDate===iso;
+      const today=d===17;
+      const holiday=holidays.includes(d);
+      const event=events[d];
+      return `<button onclick="selectDate('${iso}')" class="calendar-day ${selected?'selected':''} ${today?'today':''} ${holiday?'holiday':''} text-left">
+        <div class="flex items-center justify-between gap-2"><span class="font-bold text-sm">${d}</span>${today?'<span class="badge badge-blue text-[9px]">TODAY</span>':''}</div>
+        ${holiday?`<div class="mt-2 flex items-center gap-1"><span class="calendar-dot" style="background:#004C99"></span><span class="event-text text-[10px] font-bold">Holiday</span></div>`:''}
+        ${event?`<div class="mt-2 flex items-center gap-1"><span class="calendar-dot"></span><span class="event-text text-[10px] text-slate-500">${event}</span></div>`:''}
+      </button>`;
+    }).join('')}</div>
+    <div class="calendar-legend"><span><i style="background:#004C99"></i> Holiday</span><span><i style="background:#16A34A"></i> Class day</span><span><i style="background:#FF548D"></i> Event / exam</span></div>`;
 }
 
 function examsPage() {
@@ -427,7 +440,7 @@ function examsPage() {
   const isAdmin = state.role === 'admin';
   if (isTeacher) return `${pageHeader(`<button onclick="submitToast('Marks saved as draft')" class="btn btn-primary">Save marks ${icon(icons.check,16)}</button>`)}<section class="card p-5"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5"><div><h2 class="heading text-xl font-extrabold">PT2 • Mathematics</h2><p class="text-xs text-slate-500 mt-1">Enter marks for Class 8A</p></div><select class="input md:w-52"><option>PT2</option><option>Half-Yearly</option></select></div><div class="table-wrap"><table class="app-table"><thead><tr><th>Student</th><th>PT1</th><th>PT2</th><th>Current</th><th>Status</th></tr></thead><tbody>${studentAttendance.map((s,i)=>`<tr><td class="font-bold">${s.name}</td><td>${70+i}</td><td><input class="input !py-2 !rounded-lg w-24" value="${78+i*2}" /></td><td>${78+i*2}%</td><td><span class="badge badge-blue">Draft</span></td></tr>`).join('')}</tbody></table></div></section>`;
   if (isAdmin) return `${pageHeader(`<button onclick="approveToast('Marks approved and report card data locked')" class="btn btn-success">Approve results ${icon(icons.check,16)}</button>`)}<section class="card p-5"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Exam approval queue</h2><p class="text-xs text-slate-500 mt-1">Results waiting for final approval.</p></div><span class="badge badge-yellow">3 pending</span></div><div class="space-y-3">${approvalRow('PT2 Marks','Mathematics • 8A','Mr. Vivek','exams')}${approvalRow('PT2 Marks','English • 8A','Ms. Asha','exams')}${approvalRow('PT2 Marks','Physics • 8A','Dr. Rahul','exams')}</div></section>`;
-  return `${pageHeader()}<div class="card p-5 mb-5"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><div class="text-xs text-slate-500 font-bold">EXAM</div><h2 class="heading text-2xl font-extrabold mt-1">Half-Yearly Examination</h2><p class="text-xs text-slate-500 mt-1">Contribution to final grade: 40%</p></div><select class="input md:w-52"><option>Half-Yearly</option><option>PT2</option><option>PT1</option></select></div></div><section class="card p-5"><div class="table-wrap"><table class="app-table"><thead><tr><th>Subject</th><th>Marks</th><th>Max</th><th>%</th><th>Question Paper</th><th>Answer Key</th></tr></thead><tbody>${marks.map(m=>`<tr><td class="font-bold">${m.subject}</td><td>${m.half}</td><td>100</td><td><span class="badge badge-green">${m.half}%</span></td><td><button class="btn btn-soft text-xs">View ${icon(icons.file,14)}</button></td><td><button class="btn btn-soft text-xs">View ${icon(icons.file,14)}</button></td></tr>`).join('')}</tbody></table></div></section><section class="card p-5 mt-5"><h2 class="heading text-xl font-extrabold mb-4">Performance trend</h2><div class="grid grid-cols-1 md:grid-cols-4 gap-4">${marks.map(m=>`<div class="soft-card p-4"><div class="text-xs text-slate-500">${m.subject}</div><div class="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-pinkbrand rounded-full" style="width:${m.half}%"></div></div><div class="mt-2 font-noto font-extrabold text-xl">${m.half}%</div><div class="text-[11px] text-green-600 font-bold">+${m.half-m.pt1} from PT1</div></div>`).join('')}</div></section>`;
+  return `${pageHeader()}<div class="card p-5 mb-5"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><div class="text-xs text-slate-500 font-bold">EXAM</div><h2 class="heading text-2xl font-extrabold mt-1">Half-Yearly Examination</h2><p class="text-xs text-slate-500 mt-1">Contribution to final grade: 40%</p></div><select class="input md:w-52"><option>Half-Yearly</option><option>PT2</option><option>PT1</option></select></div></div><section class="card p-5"><div class="table-wrap"><table class="app-table"><thead><tr><th>Subject</th><th>Marks</th><th>Max</th><th>%</th><th>Question Paper</th><th>Answer Key</th></tr></thead><tbody>${marks.map(m=>`<tr><td class="font-bold">${m.subject}</td><td>${m.half}</td><td>100</td><td><span class="badge badge-green">${m.half}%</span></td><td><button class="btn btn-soft text-xs">View ${icon(icons.file,14)}</button></td><td><button class="btn btn-soft text-xs">View ${icon(icons.file,14)}</button></td></tr>`).join('')}</tbody></table></div></section><section class="card p-5 mt-5"><h2 class="heading text-xl font-extrabold mb-4">Performance trend</h2><div class="grid grid-cols-1 md:grid-cols-4 gap-4">${marks.map(m=>`<div class="soft-card p-4"><div class="text-xs text-slate-500">${m.subject}</div><div class="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-[#004C99] rounded-full" style="width:${m.half}%"></div></div><div class="mt-2 font-noto font-extrabold text-xl">${m.half}%</div><div class="text-[11px] text-green-600 font-bold">+${m.half-m.pt1} from PT1</div></div>`).join('')}</div></section>`;
 }
 
 function notesPage() {
@@ -457,9 +470,15 @@ function feesPage() {
 
 function foodPage() {
   const menu = [
-    ['Monday','Idli • Sambar • Fruit','Vegetarian'],['Tuesday','Veg Pulao • Raita • Banana','Vegetarian'],['Wednesday','Chapati • Paneer Curry • Salad','Vegetarian'],['Thursday','Lemon Rice • Dal • Curd','Vegetarian'],['Friday','Veg Noodles • Manchurian • Fruit','Vegetarian']
+    {day:'Monday', breakfast:'Idli • Sambar • Banana', lunch:'Veg pulao • Raita • Cucumber salad'},
+    {day:'Tuesday', breakfast:'Poha • Boiled egg / banana', lunch:'Rajma • Jeera rice • Chapati • Curd'},
+    {day:'Wednesday', breakfast:'Upma • Coconut chutney • Fruit', lunch:'Paneer curry • Chapati • Dal • Salad'},
+    {day:'Thursday', breakfast:'Masala dosa • Sambar • Fruit', lunch:'Lemon rice • Dal • Curd • Beans poriyal'},
+    {day:'Friday', breakfast:'Veg sandwich • Milk • Fruit', lunch:'Veg noodles • Manchurian • Sweet corn'},
   ];
-  return `${pageHeader()}<section class="card p-5"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">This week's menu</h2><p class="text-xs text-slate-500 mt-1">August 17–21, 2026</p></div><span class="badge badge-green">Updated this week</span></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">${menu.map((m,i)=>`<div class="soft-card p-4 ${i===0?'ring-2 ring-[#004C99]/20':''}"><div class="text-xs text-slate-500 font-bold uppercase tracking-wide">${m[0]}</div><div class="w-10 h-10 rounded-xl bg-[#004C99]/10 text-[#004C99] grid place-items-center mt-3">${icon(icons.food,18)}</div><div class="font-bold text-sm mt-3 leading-5">${m[1]}</div><span class="badge badge-blue mt-3">${m[2]}</span></div>`).join('')}</div></section>`;
+  return `${pageHeader()}<section class="card p-5"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">This week's food menu</h2><p class="text-xs text-slate-500 mt-1">August 17–21, 2026</p></div><span class="badge badge-green">Updated this week</span></div>
+    <div class="table-wrap"><table class="app-table"><thead><tr><th>Day</th><th>Breakfast</th><th>Lunch</th></tr></thead><tbody>${menu.map((m,i)=>`<tr class="${i===0?'bg-[#004C99]/5':''}"><td class="font-bold">${m.day}${i===0?'<div class="text-[10px] text-[#004C99] mt-1">Today</div>':''}</td><td><div class="flex items-start gap-2"><span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 grid place-items-center shrink-0">${icon(icons.food,15)}</span><span>${m.breakfast}</span></div></td><td><div class="flex items-start gap-2"><span class="w-8 h-8 rounded-lg bg-[#004C99]/10 text-[#004C99] grid place-items-center shrink-0">${icon(icons.food,15)}</span><span>${m.lunch}</span></div></td></tr>`).join('')}</tbody></table></div>
+  </section>`;
 }
 
 function lostFoundPage() {
@@ -472,7 +491,7 @@ function personalNotesPage() {
 }
 
 function metricCard(title, value, subtitle, ico, footer) {
-  return `<div class="card p-5"><div class="flex items-start justify-between"><div><div class="text-xs text-slate-500 font-bold uppercase tracking-[.12em]">${title}</div><div class="metric-number text-3xl font-extrabold mt-2">${value}</div><div class="text-xs text-slate-500 mt-1">${subtitle}</div></div><div class="w-10 h-10 rounded-xl bg-pinkbrand/10 text-pinkbrand grid place-items-center">${icon(ico,18)}</div></div><div class="mt-4 text-[11px] font-bold text-slate-500">${footer}</div></div>`;
+  return `<div class="card p-5"><div class="flex items-start justify-between"><div><div class="text-xs text-slate-500 font-bold uppercase tracking-[.12em]">${title}</div><div class="metric-number text-3xl font-extrabold mt-2">${value}</div><div class="text-xs text-slate-500 mt-1">${subtitle}</div></div><div class="w-10 h-10 rounded-xl bg-[#004C99]/10 text-[#004C99] grid place-items-center">${icon(ico,18)}</div></div><div class="mt-4 text-[11px] font-bold text-slate-500">${footer}</div></div>`;
 }
 function homeworkRow(x) {
   return `<div class="soft-card p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><div class="flex items-center gap-2"><span class="badge badge-blue">${x.subject}</span><span class="text-[11px] text-slate-400">${x.teacher}</span></div><div class="font-bold text-sm mt-2">${x.title}</div></div><span class="badge badge-yellow">${x.status}</span></div>`;
@@ -504,7 +523,7 @@ function openMockPdf(e, title) {
 function renderAI() {
   const panel = document.getElementById('ai-panel');
   if (!panel) return;
-  panel.innerHTML = `<div class="bg-black text-white px-4 py-4 flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-lg bg-pinkbrand grid place-items-center">${icon(icons.bot,16)}</div><div><div class="font-noto font-extrabold">SAGE</div><div class="text-[10px] opacity-70">School Intelligence</div></div></div><button onclick="toggleAI()" class="text-white/80">${icon(icons.close,18)}</button></div><div id="ai-messages" class="flex-1 p-4 overflow-auto space-y-3 bg-slate-50"><div class="soft-card p-3 text-sm"><div class="font-bold mb-1">SAGE</div><div>Ask me about your attendance, homework, exams, notes or school calendar.</div></div><div class="flex flex-wrap gap-2">${['What is my attendance?','What is due today?','Is tomorrow a holiday?','Did my math marks improve?'].map(q=>`<button onclick="askAI('${q.replaceAll("'","\\'")}')" class="btn btn-outline text-xs">${q}</button>`).join('')}</div></div><form onsubmit="submitAI(event)" class="p-3 border-t border-slate-100 bg-white flex gap-2"><input id="ai-input" class="input !rounded-xl" placeholder="Ask SAGE..." /><button class="btn btn-dark px-3">${icon(icons.send,16)}</button></form>`;
+  panel.innerHTML = `<div class="bg-black text-white px-4 py-4 flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-lg bg-[#004C99] grid place-items-center">${icon(icons.bot,16)}</div><div><div class="font-noto font-extrabold">SAGE</div><div class="text-[10px] opacity-70">School Intelligence</div></div></div><button onclick="toggleAI()" class="text-white/80">${icon(icons.close,18)}</button></div><div id="ai-messages" class="flex-1 p-4 overflow-auto space-y-3 bg-slate-50 text-ink"><div class="soft-card p-3 text-sm"><div class="font-bold mb-1">SAGE</div><div>Ask me about your attendance, homework, exams, notes or school calendar.</div></div><div class="flex flex-wrap gap-2">${['What is my attendance?','What is due today?','Is tomorrow a holiday?','Did my math marks improve?'].map(q=>`<button onclick="askAI('${q.replaceAll("'","\\'")}')" class="btn btn-outline text-xs">${q}</button>`).join('')}</div></div><form onsubmit="submitAI(event)" class="p-3 border-t border-slate-100 bg-white flex gap-2"><input id="ai-input" class="input !rounded-xl" placeholder="Ask SAGE..." /><button class="btn btn-dark px-3">${icon(icons.send,16)}</button></form>`;
   panel.classList.toggle('open', state.aiOpen);
   initIcons();
 }
