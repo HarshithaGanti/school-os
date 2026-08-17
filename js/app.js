@@ -170,11 +170,13 @@ function shell() {
   return `
     <div class="app-shell dark-mode-shell">
       <aside id="sidebar" class="sidebar flex flex-col p-4">
-        <div class="flex items-center gap-3 px-2 py-2 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-black text-white grid place-items-center font-extrabold">V</div>
-          <div>
-            <div class="font-noto font-extrabold text-[18px]">Vednix</div>
-            <div class="text-[11px] font-bold opacity-65 tracking-wide">SMART SCHOOL PLATFORM</div>
+        <div class="logo-panel">
+          <div class="flex items-center gap-3">
+            <div class="logo-mark">V</div>
+            <div class="min-w-0">
+              <div class="logo-name">Vednix</div>
+              <div class="logo-sub">SMART SCHOOL PLATFORM</div>
+            </div>
           </div>
         </div>
 
@@ -207,24 +209,24 @@ function shell() {
         </div>
       </aside>
 
-      <header class="topbar flex items-center justify-between px-5 md:px-7">
+      <header class="topbar ref-topbar flex items-center justify-between px-4 md:px-5">
         <div class="flex items-center gap-3 min-w-0">
           <button onclick="toggleSidebar()" class="mobile-menu btn bg-white/15 text-white px-2.5 py-2 rounded-xl">${icon(icons.menu,18)}</button>
-          <div class="hidden md:block font-bold text-sm opacity-90">My School / ${roleNames[state.role]}</div>
-          <div class="md:hidden font-bold text-sm">Vednix</div>
+          <div class="hidden md:block text-xs font-bold text-slate-600">My School / ${roleNames[state.role]}</div>
+          <div class="md:hidden font-bold text-sm text-slate-800">Vednix</div>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="toggleDarkMode()" class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl" title="Toggle dark mode">${icon(state.darkMode ? icons.sun : icons.moon,18)}</button>
-          <button class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl" title="Search">${icon(icons.search,18)}</button>
-          <button class="btn bg-white/15 text-white px-2.5 py-2 rounded-xl relative" title="Notifications">
+          <button onclick="toggleDarkMode()" class="ref-top-icon btn px-2.5 py-2 rounded-xl" title="Toggle dark mode">${icon(state.darkMode ? icons.sun : icons.moon,18)}</button>
+          <button class="ref-top-icon btn px-2.5 py-2 rounded-xl" title="Search">${icon(icons.search,18)}</button>
+          <button class="ref-top-icon btn px-2.5 py-2 rounded-xl relative" title="Notifications">
             ${icon(icons.bell,18)}<span class="absolute -top-1 -right-1 w-4 h-4 bg-black text-white rounded-full text-[9px] grid place-items-center">3</span>
           </button>
-          <div class="hidden md:flex items-center gap-2 pl-2">
-            <div class="text-right">
+          <div class="hidden md:flex items-center gap-2 pl-1 ref-profile-pill">
+            <div class="text-right leading-tight">
               <div class="font-bold text-sm">${meta.name}</div>
               <div class="text-[11px] opacity-80">${roleNames[state.role]}</div>
             </div>
-            <div class="w-9 h-9 rounded-full bg-white text-pinkbrand grid place-items-center text-xs font-extrabold">${meta.initials}</div>
+            <div class="ref-avatar">${meta.initials}</div>
           </div>
         </div>
       </header>
@@ -274,48 +276,93 @@ function dashboardPage() {
 
 function studentParentDashboard() {
   return `
-    ${pageHeader(`<button onclick="navigate('homework')" class="btn btn-primary">View today's work ${icon(icons.arrow,16)}</button>`)}
-
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-      ${metricCard('Attendance', '94.2%', 'Current attendance', icons.attendance, 'Good standing')}
-      ${metricCard('Homework', '3', 'Due this week', icons.homework, '2 due soon')}
-      ${metricCard('Next Exam', 'Math', 'Half-Yearly • 22 Aug', icons.exams, '5 days left')}
-      ${metricCard('Announcements', '3', 'New since Friday', icons.announcements, 'Read all')}
+    <div class="dashboard-ref-header">
+      <div>
+        <h1 class="heading text-3xl md:text-[34px] font-extrabold">Dashboard</h1>
+        <p class="text-sm text-slate-500 mt-1">A quick view of everything that needs your attention.</p>
+      </div>
+      <button onclick="navigate('homework')" class="ref-dark-btn">View today's work ${icon(icons.arrow,16)}</button>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-[1.45fr_.95fr] gap-5">
-      <section class="card p-5">
-        <div class="flex items-center justify-between mb-5">
-          <div><h2 class="heading text-xl font-extrabold">Today's Homework</h2><p class="text-xs text-slate-500 mt-1">Monday, 17 August 2026</p></div>
-          <button onclick="navigate('homework')" class="btn btn-soft text-xs">Open calendar</button>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      ${refMetricCard('Attendance', '94.2%', 'Current attendance', icons.attendance, 'Good standing', 'attendance')}
+      ${refMetricCard('Homework', '3', 'Due this week', icons.homework, '2 due soon', 'homework')}
+      ${refMetricCard('Next Exam', 'Math', 'Half-Yearly • 22 Aug', icons.exams, '5 days left', 'exam')}
+      ${refMetricCard('Announcements', '3', 'New since Friday', icons.announcements, 'Read all', 'announcement', true)}
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[1.35fr_.75fr] gap-4">
+      <div class="space-y-4">
+        <section class="ref-card p-4 md:p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="heading text-xl font-extrabold">Today's Homework</h2>
+              <div class="text-[11px] text-slate-500 mt-1">Monday, 17 August 2026 <span class="inline-flex items-center gap-1 ml-2"><span class="w-5 h-5 rounded-full bg-slate-300/80 grid place-items-center">${icon('user',11)}</span> <span>My Week</span></span></div>
+            </div>
+            <button onclick="navigate('homework')" class="ref-light-btn">Due calendar</button>
+          </div>
+          <div class="space-y-2.5">
+            ${homework.filter(x => x.date==='2026-08-17').slice(0,2).map(x => refHomeworkRow(x)).join('')}
+          </div>
+        </section>
+
+        <section class="ref-card p-4 md:p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="heading text-xl font-extrabold">Quick Actions</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            ${refQuickAction('Quick Poll', 'chart-no-axes-combined', "showToast('Quick poll opened')")}
+            ${refQuickAction('Message Teacher', 'mail', "showToast('Teacher messaging opened')")}
+            ${refQuickAction('Library Access', 'library-big', "showToast('Library access opened')")}
+          </div>
+        </section>
+      </div>
+
+      <section class="ref-card p-4 md:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="heading text-xl font-extrabold">Upcoming</h2>
+            <p class="text-[11px] text-slate-500 mt-1">What is coming next</p>
+          </div>
+          <button class="ref-light-btn">${icon('list-filter',14)} Filter Calendar</button>
         </div>
         <div class="space-y-3">
-          ${homework.filter(x => x.date==='2026-08-17').map(x => homeworkRow(x)).join('')}
+          ${refUpcoming('18', 'AUG', 'Normal classes', 'Tuesday', 'bell')}
+          ${refUpcoming('20', 'AUG', 'Math practice test', 'Thursday', 'flask-conical')}
+          ${refUpcoming('22', 'AUG', 'Half-Yearly + Mathematics', 'Saturday', 'triangle')}
+          ${refUpcoming('31', 'AUG', 'Science Exhibition', 'Monday', 'pencil')}
         </div>
       </section>
+    </div>`;
+}
 
-      <section class="card p-5">
-        <div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Upcoming</h2><p class="text-xs text-slate-500 mt-1">What is coming next</p></div></div>
-        <div class="space-y-4">
-          ${upcomingItem('18 Aug', 'Normal classes', 'Tuesday')}
-          ${upcomingItem('20 Aug', 'Math practice test', 'Thursday')}
-          ${upcomingItem('22 Aug', 'Half-Yearly • Mathematics', 'Saturday')}
-          ${upcomingItem('31 Aug', 'Science Exhibition', 'Monday')}
-        </div>
-      </section>
-    </div>
+function refMetricCard(title, value, sub, ico, foot, type, isNew=false) {
+  const accent = type==='attendance' ? 'ref-ring ring-blue' : type==='homework' ? 'ref-mini-visual books' : type==='exam' ? 'ref-mini-visual clock' : 'ref-mini-visual bubble';
+  const target = type==='attendance' ? "navigate('attendance')" : type==='homework' ? "navigate('homework')" : type==='exam' ? "navigate('exams')" : "navigate('announcements')";
+  return `<button onclick="${target}" class="ref-card ref-metric text-left w-full">
+    <div><div class="ref-kicker">${title}</div><div class="ref-value">${value}</div><div class="ref-sub">${sub}</div><div class="ref-foot">${foot}</div></div>
+    <div class="${accent}">${isNew ? '<span class="ref-new">new</span>' : icon(ico, 30, 1.7)}</div>
+  </button>`;
+}
 
-    <section class="card p-5 mt-5">
-      <div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Attendance snapshot</h2><p class="text-xs text-slate-500 mt-1">Current academic year</p></div><button onclick="navigate('attendance')" class="btn btn-soft text-xs">View details</button></div>
-      <div class="flex flex-col md:flex-row md:items-center gap-5">
-        <div class="w-28 h-28 rounded-full border-[10px] border-skybrand/30 grid place-items-center relative shrink-0"><div class="text-center"><div class="metric-number font-extrabold text-2xl">94.2%</div><div class="text-[10px] text-slate-500">Attendance</div></div></div>
-        <div class="flex-1 w-full">
-          <div class="flex justify-between text-xs font-bold mb-2"><span>Present days</span><span>154 / 164</span></div>
-          <div class="progress-track"><div class="progress-fill" style="width:94.2%"></div></div>
-          <p class="text-xs text-slate-500 mt-3">You are comfortably above the school's recommended threshold of 75%.</p>
-        </div>
-      </div>
-    </section>`;
+function refHomeworkRow(x) {
+  const iconName = x.subject === 'English' ? 'feather' : x.subject === 'Physics' ? 'atom' : 'calculator';
+  return `<div class="ref-homework-row">
+    <div class="ref-subject-icon">${icon(iconName,23,1.7)}</div>
+    <div class="min-w-0 flex-1"><div class="text-[10px] font-bold text-slate-500">${x.subject} <span class="font-normal">• ${x.teacher}</span></div><div class="font-bold text-sm md:text-[13px] mt-1 truncate">${x.title}</div></div>
+    <span class="ref-due">${x.status}</span>
+  </div>`;
+}
+
+function refQuickAction(label, ico, fn) {
+  return `<button onclick="${fn}" class="ref-quick"><span>${icon(ico,18,2)}</span><span>${label}</span></button>`;
+}
+
+function refUpcoming(day, mon, title, sub, ico) {
+  return `<div class="flex items-center gap-3">
+    <div class="ref-datebox"><strong>${day}</strong><span>${mon}</span></div>
+    <div class="min-w-0 flex-1"><div class="font-bold text-[13px] md:text-sm truncate">${title} ${icon(ico,13,2)}</div><div class="text-[11px] text-slate-500 mt-0.5">${sub}</div></div>
+  </div>`;
 }
 
 function teacherDashboard() {
