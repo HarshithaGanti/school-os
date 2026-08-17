@@ -28,3 +28,27 @@ html.dark .calendar-day.holiday{background:#123A5B;border-color:#245E85;color:#B
 .calendar-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .calendar-legend span{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted)}
 .calendar-legend i{width:9px;height:9px;border-radius:999px;display:inline-block}
+
+/* v4 additions */
+:root{--topbar:#0066CC}
+html.dark{--topbar:#073B6F}
+html.dark .topbar{background:#073B6F}
+html.dark .sidebar{background:#06243C}
+html.dark .sidebar .border-black\/10{border-color:rgba(255,255,255,.12)!important}
+html.dark .sidebar .opacity-55{opacity:.7}
+html.dark .sidebar .opacity-65{opacity:.76}
+html.dark .sidebar .text-white{color:#fff}
+html.dark .topbar .bg-white\/15{background:rgba(255,255,255,.11)!important}
+html.dark .card,html.dark .soft-card{box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.52);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal-card{width:min(560px,100%);background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 30px 90px rgba(0,0,0,.28)}
+.bus-map{height:390px;position:relative;overflow:hidden;border-radius:18px;background:radial-gradient(circle at 22% 18%,rgba(84,204,255,.18),transparent 28%),radial-gradient(circle at 80% 80%,rgba(0,102,204,.12),transparent 30%),var(--surface);border:1px solid var(--line)}
+.bus-map:before,.bus-map:after{content:'';position:absolute;background:rgba(127,140,156,.18);border-radius:999px;transform:rotate(27deg)}
+.bus-map:before{width:120%;height:24px;left:-10%;top:46%}.bus-map:after{width:120%;height:18px;left:-5%;top:69%;transform:rotate(-21deg)}
+.map-road{position:absolute;background:rgba(255,255,255,.7);border:1px solid rgba(127,140,156,.12);border-radius:999px;opacity:.8}.road-a{width:85%;height:16px;top:22%;left:8%;transform:rotate(-18deg)}.road-b{width:70%;height:14px;top:56%;left:18%;transform:rotate(22deg)}.road-c{width:55%;height:12px;top:81%;left:32%;transform:rotate(-12deg)}
+.route-line{position:absolute;left:16%;top:24%;width:61%;height:51%;border:5px dashed var(--accent);border-radius:45% 55% 50% 40%;transform:rotate(9deg);opacity:.75}
+.route-stop{position:absolute;z-index:2;display:flex;align-items:center;gap:8px;font-weight:800;font-size:12px}.route-stop span{width:22px;height:22px;border-radius:999px;background:var(--card);border:3px solid #16A34A;display:grid;place-items:center;color:#16A34A;box-shadow:0 5px 15px rgba(0,0,0,.08)}.route-stop label{white-space:nowrap}.route-stop label small{font-weight:600;color:var(--muted)}.route-stop.current span{width:34px;height:34px;background:var(--accent);border-color:#fff;color:#fff;animation:pulseBus 1.8s infinite}.route-stop.current label{color:var(--accent)}.stop-1{left:9%;top:19%}.stop-2{left:44%;top:42%}.stop-3{left:61%;top:57%}.stop-4{left:75%;top:74%}
+@keyframes pulseBus{0%,100%{box-shadow:0 0 0 0 rgba(0,102,204,.32),0 8px 20px rgba(0,0,0,.12)}50%{box-shadow:0 0 0 12px rgba(0,102,204,0),0 8px 20px rgba(0,0,0,.12)}}
+html.dark .bus-map{background:radial-gradient(circle at 22% 18%,rgba(84,204,255,.10),transparent 28%),radial-gradient(circle at 80% 80%,rgba(0,102,204,.16),transparent 30%),#0B1117}html.dark .map-road{background:rgba(255,255,255,.05)}
+@media(max-width:700px){.bus-map{height:330px}.route-stop{font-size:10px}.route-line{left:10%;width:72%}}

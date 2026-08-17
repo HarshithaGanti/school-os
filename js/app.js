@@ -37,6 +37,7 @@ const icons = {
   moon: 'moon',
   sun: 'sun',
   external: 'external-link',
+  bus: 'bus-front',
 };
 
 const roleNames = {
@@ -63,6 +64,7 @@ const pageMeta = {
   food: { title: 'Food', subtitle: "This week's school menu and meal information." },
   lostfound: { title: 'Lost & Found', subtitle: 'Browse recently reported items and return them to their owners.' },
   personal: { title: 'Personal Notes', subtitle: 'Save quick reminders, ideas and school-related notes.' },
+  bus: { title: 'Bus Tracking', subtitle: 'See the live location and expected arrival of your school bus.' },
 };
 
 const homework = [
@@ -138,19 +140,29 @@ function initIcons() {
 }
 
 function navItems() {
-  return [
-    ['dashboard', 'Dashboard', icons.dashboard],
-    ['homework', 'Homework', icons.homework],
-    ['attendance', 'Attendance', icons.attendance],
-    ['calendar', 'Academic Calendar', icons.calendar],
-    ['exams', 'Exams', icons.exams],
-    ['notes', 'Notes', icons.notes],
-    ['announcements', 'Announcements', icons.announcements],
-    ['fees', 'Fees', icons.fees],
-    ['food', 'Food', icons.food],
-    ['lostfound', 'Lost & Found', icons.lost],
-    ['personal', 'Personal Notes', icons.personal],
+  const groups = [
+    { heading: 'Workspace', items: [
+      ['dashboard', 'Dashboard', icons.dashboard],
+      ['homework', 'Homework', icons.homework],
+      ['attendance', 'Attendance', icons.attendance],
+      ['calendar', 'Academic Calendar', icons.calendar],
+      ['exams', 'Exams', icons.exams],
+    ]},
+    { heading: 'Academics', items: [
+      ['notes', 'Notes', icons.notes],
+      ['announcements', 'Announcements', icons.announcements],
+    ]},
+    { heading: 'School', items: [
+      ...(state.role !== 'teacher' ? [['fees', 'Fees', icons.fees]] : []),
+      ['food', 'Food', icons.food],
+      ['lostfound', 'Lost & Found', icons.lost],
+      ...(state.role === 'student' ? [['bus', 'Bus Tracking', icons.bus]] : []),
+    ]},
+    { heading: 'Personal', items: [
+      ['personal', 'Personal Notes', icons.personal],
+    ]},
   ];
+  return groups;
 }
 
 function shell() {
@@ -166,13 +178,18 @@ function shell() {
           </div>
         </div>
 
-        <div class="px-2 mb-2 text-[11px] font-bold uppercase tracking-[.14em] opacity-55">Workspace</div>
-        <nav class="space-y-1">
-          ${navItems().map(([id,label,ico]) => `
-            <button onclick="navigate('${id}')" class="nav-item ${state.activePage === id ? 'active' : ''} w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-bold text-[14px]">
-              ${icon(ico, 18, 2)}
-              <span>${label}</span>
-            </button>`).join('')}
+        <nav class="space-y-5">
+          ${navItems().map(group => `
+            <div>
+              <div class="px-2 mb-2 text-[11px] font-bold uppercase tracking-[.14em] opacity-55">${group.heading}</div>
+              <div class="space-y-1">
+                ${group.items.map(([id,label,ico]) => `
+                  <button onclick="navigate('${id}')" class="nav-item ${state.activePage === id ? 'active' : ''} w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-bold text-[14px]">
+                    ${icon(ico, 18, 2)}
+                    <span>${label}</span>
+                  </button>`).join('')}
+              </div>
+            </div>`).join('')}
         </nav>
 
         <div class="mt-auto pt-5 border-t border-black/10">
@@ -243,8 +260,9 @@ function pageHeader(actions = '') {
 function renderPage() {
   const root = document.getElementById('page-root');
   const page = state.activePage;
-  const view = ({ dashboard: dashboardPage, homework: homeworkPage, attendance: attendancePage, calendar: calendarPage, exams: examsPage, notes: notesPage, announcements: announcementsPage, fees: feesPage, food: foodPage, lostfound: lostFoundPage, personal: personalNotesPage })[page];
+  const view = ({ dashboard: dashboardPage, homework: homeworkPage, attendance: attendancePage, calendar: calendarPage, exams: examsPage, notes: notesPage, announcements: announcementsPage, fees: feesPage, food: foodPage, lostfound: lostFoundPage, personal: personalNotesPage, bus: busTrackingPage })[page];
   root.innerHTML = view();
+  if (page === 'fees' && state.role === 'admin') renderFeeTable();
   initIcons();
 }
 
@@ -447,12 +465,12 @@ function notesPage() {
   const isTeacher = state.role === 'teacher';
   const isAdmin = state.role === 'admin';
   const subjects = ['Mathematics','Physics','English','Computer Science'];
-  return `${pageHeader(isTeacher ? `<button class="btn btn-primary" onclick="showToast('Upload notes UI ready for PDF integration')">${icon(icons.plus,16)} Upload notes</button>` : '')}
-  <section class="card p-5"><div class="mb-5"><h2 class="heading text-xl font-extrabold">Notes library</h2><p class="text-xs text-slate-500 mt-1">Each subject has its own chapter library. Students see the approved PDFs directly.</p></div>
+  return `${pageHeader(isTeacher ? `<button class="btn btn-primary" onclick="openUploadModal()">${icon(icons.plus,16)} Add chapter PDF</button>` : '')}
+  <section class="card p-5"><div class="mb-5"><h2 class="heading text-xl font-extrabold">Notes library</h2><p class="text-xs text-slate-500 mt-1">Each subject has its own chapter library. Students see approved PDFs directly.</p></div>
   <div class="space-y-3">${subjects.map(subject=>{
     const items = notesBySubject[subject] || [];
-    return `<details class="subject-accordion"><summary class="flex items-center justify-between gap-3 p-4 cursor-pointer list-none"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-[#004C99]/10 grid place-items-center text-[#004C99]">${icon(icons.notes,18)}</div><div><div class="font-bold text-sm">${subject}</div><div class="text-xs text-slate-500">${items.length} chapters</div></div></div><span class="text-slate-400">${icon(icons.arrow,16)}</span></summary><div class="px-4 pb-4 pt-1 space-y-2">${items.map(n=>`<div class="soft-card p-3 flex items-center justify-between gap-3"><div class="min-w-0"><div class="font-bold text-sm truncate">${n.chapter}</div><div class="text-[11px] text-slate-500">${n.type} • ${n.enabled ? 'Available' : 'Waiting for approval'}</div></div>${isTeacher ? `<button onclick="toggleNote(${n.id})" class="note-toggle ${n.enabled?'on':''}" title="${n.enabled?'Disable chapter':'Enable chapter'}"><span></span></button>` : isAdmin ? `<div class="flex items-center gap-2"><span class="badge badge-yellow">${n.enabled?'Approved':'Pending'}</span><button onclick="approveToast('Note approved')" class="btn btn-success text-xs">Approve</button></div>` : `<a href="./pdfs/${n.file}" class="btn btn-soft text-xs" onclick="openMockPdf(event, '${n.chapter.replaceAll("'","\\'")}')">Open PDF ${icon(icons.external,14)}</a>`}</div>`).join('')}</div></details>`;
-  }).join('')}</div></section>`;
+    return `<details class="subject-accordion"><summary class="flex items-center justify-between gap-3 p-4 cursor-pointer list-none"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-[#004C99]/10 grid place-items-center text-[#004C99]">${icon(icons.notes,18)}</div><div><div class="font-bold text-sm">${subject}</div><div class="text-xs text-slate-500">${items.length} chapters</div></div></div><span class="text-slate-400">${icon(icons.arrow,16)}</span></summary><div class="px-4 pb-4 pt-1 space-y-2">${items.map(n=>`<div class="soft-card p-3 flex items-center justify-between gap-3"><div class="min-w-0"><div class="font-bold text-sm truncate">${n.chapter}</div><div class="text-[11px] text-slate-500">${n.type} • ${n.enabled ? 'Available' : 'Not published'}</div></div>${isTeacher ? `<div class="flex items-center gap-3"><button onclick="openUploadModal('${subject}','${n.chapter.replaceAll("'","\'")}')" class="btn btn-soft text-xs">${icon(icons.file,14)} Replace PDF</button><button onclick="toggleNote(${n.id})" class="note-toggle ${n.enabled?'on':''}" title="${n.enabled?'Disable chapter':'Publish chapter'}"><span></span></button></div>` : isAdmin ? `<div class="flex items-center gap-2"><span class="badge ${n.enabled?'badge-green':'badge-yellow'}">${n.enabled?'Approved':'Pending'}</span><button onclick="approveToast('Note approved')" class="btn btn-success text-xs">Approve</button></div>` : n.enabled ? `<a href="./pdfs/${n.file}" target="_blank" rel="noopener" class="btn btn-soft text-xs">Open PDF ${icon(icons.external,14)}</a>` : `<span class="badge badge-gray">Not published</span>`}</div>`).join('')}</div></details>`;
+  }).join('')}</div></section>${isTeacher ? uploadModalMarkup() : ''}`;
 }
 
 function announcementsPage() {
@@ -465,6 +483,24 @@ function announcementsPage() {
 
 function feesPage() {
   const rows = [['Term 1 Tuition','₹18,500','Paid'],['Term 2 Tuition','₹18,500','Due 10 Sep'],['Transport','₹6,000','Paid'],['Activity Fee','₹2,000','Paid']];
+  if (state.role === 'teacher') {
+    return `${pageHeader()}<section class="card p-8 text-center"><div class="w-14 h-14 rounded-2xl bg-[#004C99]/10 text-[#004C99] mx-auto grid place-items-center">${icon(icons.fees,24)}</div><h2 class="heading text-xl font-extrabold mt-4">Fees are not part of the teacher workspace</h2><p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">Teacher accounts do not have access to student fee records.</p><button onclick="navigate('dashboard')" class="btn btn-primary mt-5">Back to dashboard</button></section>`;
+  }
+  if (state.role === 'admin') {
+    const students = teacherStudents.map((s,i)=>({name:s,class:`${7 + (i%3)+1}`,section:['A','B','C'][i%3],due:[1,4,0,2,0,3,5,0,2,0][i%10],amount:[18500,32000,0,6000,18500][i%5]}));
+    return `${pageHeader(`<button onclick="showToast('Fee export prepared for demo')" class="btn btn-primary">${icon(icons.file,16)} Export report</button>`)}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">${metricCard('Students','35','Demo fee records','users','All classes')}${metricCard('With dues','16','Require follow-up','warning','Highlighted below')}${metricCard('Collected','₹8.42L','This academic year','check','Mock demo total')}</div>
+      <section class="card p-5">
+        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-5">
+          <div><h2 class="heading text-xl font-extrabold">Student fee status</h2><p class="text-xs text-slate-500 mt-1">Green = clear. Red = outstanding dues.</p></div>
+          <div class="grid grid-cols-2 gap-3 md:w-[420px]">
+            <label class="text-xs font-bold text-slate-500">CLASS<select id="fee-class-filter" onchange="renderFeeTable()" class="input mt-1"><option value="all">All classes</option>${[8,9,10].map(c=>`<option value="${c}">Class ${c}</option>`).join('')}</select></label>
+            <label class="text-xs font-bold text-slate-500">SECTION<select id="fee-section-filter" onchange="renderFeeTable()" class="input mt-1"><option value="all">All sections</option>${['A','B','C'].map(c=>`<option value="${c}">Section ${c}</option>`).join('')}</select></label>
+          </div>
+        </div>
+        <div id="fee-table-root"></div>
+      </section>`;
+  }
   return `${pageHeader()}<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">${metricCard('Total due','₹18,500','Next payment','fees','Due 10 September')}${metricCard('Paid this year','₹26,500','Across 3 invoices','check','Up to date')}${metricCard('Receipt status','100%','Records available','file','Download anytime')}</div><section class="card p-5"><h2 class="heading text-xl font-extrabold mb-4">Fee summary</h2><div class="table-wrap"><table class="app-table"><thead><tr><th>Fee</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="font-bold">${r[0]}</td><td>${r[1]}</td><td><span class="badge ${r[2]==='Paid'?'badge-green':'badge-yellow'}">${r[2]}</span></td><td><button class="btn btn-soft text-xs" onclick="showToast('Fee receipt preview opened')">${r[2]==='Paid'?'View receipt':'View details'}</button></td></tr>`).join('')}</tbody></table></div></section>`;
 }
 
@@ -488,6 +524,54 @@ function lostFoundPage() {
 
 function personalNotesPage() {
   return `${pageHeader(`<button class="btn btn-primary" onclick="showToast('New personal note created')">${icon(icons.plus,16)} New note</button>`)}<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"><div class="card p-5"><div class="flex items-center justify-between"><span class="badge badge-blue">Study</span><span class="text-xs text-slate-400">Today</span></div><h3 class="font-bold mt-4">Ask about math doubt</h3><p class="text-sm text-slate-500 mt-2">Remember to ask Mr. Vivek about question 7 before Friday.</p></div><div class="card p-5"><div class="flex items-center justify-between"><span class="badge badge-green">Reminder</span><span class="text-xs text-slate-400">Yesterday</span></div><h3 class="font-bold mt-4">Science exhibition</h3><p class="text-sm text-slate-500 mt-2">Bring the prototype model on 30 August.</p></div><div class="card p-5 border-dashed"><button onclick="showToast('New personal note created')" class="w-full h-full min-h-36 grid place-items-center text-slate-400 hover:text-[#004C99]"><div class="text-center">${icon(icons.plus,24)}<div class="font-bold text-sm mt-2">Create another note</div></div></button></div></div>`;
+}
+
+function busTrackingPage() {
+  if (state.role !== 'student') { return `${pageHeader()}<section class="card p-8 text-center"><div class="w-14 h-14 rounded-2xl bg-[#004C99]/10 text-[#004C99] mx-auto grid place-items-center">${icon(icons.bus,24)}</div><h2 class="heading text-xl font-extrabold mt-4">Bus tracking is available to Student / Parent accounts</h2><p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">Teacher and administrator accounts do not have access to student transport location data.</p></section>`; }
+  return `${pageHeader(`<span class="badge badge-green">${icon(icons.bus,13)} Live • Updated 12 sec ago</span>`)}
+    <div class="grid grid-cols-1 xl:grid-cols-[1.35fr_.65fr] gap-5">
+      <section class="card p-5">
+        <div class="flex items-center justify-between mb-4"><div><h2 class="heading text-xl font-extrabold">Bus 18A</h2><p class="text-xs text-slate-500 mt-1">Route: Gachibowli → Vednix Campus</p></div><span class="badge badge-blue">On route</span></div>
+        <div class="bus-map">
+          <div class="route-line"></div><div class="route-stop stop-1"><span></span><label>Gachibowli</label></div><div class="route-stop stop-2 current"><span>${icon(icons.bus,13)}</span><label>Bus 18A<br><small>2.4 km away</small></label></div><div class="route-stop stop-3"><span></span><label>Botanical Garden</label></div><div class="route-stop stop-4"><span></span><label>Campus Gate</label></div>
+          <div class="map-road road-a"></div><div class="map-road road-b"></div><div class="map-road road-c"></div>
+        </div>
+      </section>
+      <section class="card p-5">
+        <h2 class="heading text-xl font-extrabold mb-4">Trip details</h2>
+        <div class="soft-card p-4 mb-3"><div class="text-xs text-slate-500">Expected arrival</div><div class="metric-number text-3xl font-extrabold mt-1">8 min</div><div class="text-xs text-green-600 font-bold mt-1">On schedule</div></div>
+        <div class="space-y-3 text-sm">${[['Driver','Ramesh Kumar'],['Bus','18A • TS09 XX 4218'],['Current speed','28 km/h'],['Next stop','Botanical Garden']].map(x=>`<div class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0"><span class="text-slate-500">${x[0]}</span><span class="font-bold">${x[1]}</span></div>`).join('')}</div>
+      </section>
+    </div>`;
+}
+
+function uploadModalMarkup() {
+  return `<div id="upload-modal" class="modal-backdrop" onclick="closeUploadModal(event)"><div class="modal-card" onclick="event.stopPropagation()"><div class="flex items-center justify-between mb-5"><div><h2 class="heading text-xl font-extrabold">Add chapter PDF</h2><p class="text-xs text-slate-500 mt-1">Upload one reusable chapter note for the selected subject.</p></div><button onclick="closeUploadModal()" class="btn btn-soft px-2.5">${icon(icons.close,18)}</button></div><form onsubmit="submitPdfUpload(event)" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-3"><label class="text-xs font-bold text-slate-500">SUBJECT<select id="upload-subject" class="input mt-1"><option>Mathematics</option><option>Physics</option><option>English</option><option>Computer Science</option></select></label><label class="text-xs font-bold text-slate-500">CLASS<select id="upload-class" class="input mt-1"><option>8</option><option>9</option><option>10</option></select></label></div><label class="text-xs font-bold text-slate-500 block">CHAPTER TITLE<input id="upload-title" class="input mt-1" placeholder="e.g. Chapter 4 • Algebra" required></label><label class="text-xs font-bold text-slate-500 block">PDF FILE<input id="upload-file" type="file" accept="application/pdf,.pdf" class="input mt-1 p-2" required></label><div id="upload-file-name" class="text-xs text-slate-500">PDF only • recommended under 10 MB for the demo</div><div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closeUploadModal()" class="btn btn-outline">Cancel</button><button type="submit" class="btn btn-primary">Submit chapter ${icon(icons.send,15)}</button></div></form></div></div>`;
+}
+
+function openUploadModal(subject='', chapter='') {
+  const modal=document.getElementById('upload-modal');
+  if(!modal){ document.body.insertAdjacentHTML('beforeend', uploadModalMarkup()); }
+  const m=document.getElementById('upload-modal'); m.classList.add('open');
+  if(subject) document.getElementById('upload-subject').value=subject;
+  if(chapter) document.getElementById('upload-title').value=chapter;
+}
+function closeUploadModal(e) { if(e && e.target && e.target.id!=='upload-modal') return; document.getElementById('upload-modal')?.classList.remove('open'); }
+function submitPdfUpload(e) {
+  e.preventDefault();
+  const file=document.getElementById('upload-file')?.files?.[0];
+  if(!file || file.type!=='application/pdf'){ showToast('Please select a PDF file.'); return; }
+  showToast(`${document.getElementById('upload-title').value} submitted for admin approval.`);
+  closeUploadModal();
+}
+
+function renderFeeTable() {
+  const root=document.getElementById('fee-table-root');
+  if(!root) return;
+  const classValue=document.getElementById('fee-class-filter')?.value || 'all';
+  const sectionValue=document.getElementById('fee-section-filter')?.value || 'all';
+  const students=teacherStudents.map((name,i)=>({name,class:`${8+(i%3)}`,section:['A','B','C'][i%3],due:[false,true,false,true,false,false,true,false,true,false][i%10],amount:[0,18500,0,6000,0,32000,2500,0,18500,0][i%10]})).filter(s=>(classValue==='all'||s.class===classValue)&&(sectionValue==='all'||s.section===sectionValue));
+  root.innerHTML=`<div class="table-wrap"><table class="app-table"><thead><tr><th>Student</th><th>Class</th><th>Section</th><th>Outstanding</th><th>Status</th><th>Action</th></tr></thead><tbody>${students.map(s=>`<tr><td class="font-bold ${s.due?'text-red-600':'text-green-700'}">${s.name}</td><td>${s.class}</td><td>${s.section}</td><td>${s.due?`₹${s.amount.toLocaleString('en-IN')}`:'₹0'}</td><td><span class="badge ${s.due?'badge-red':'badge-green'}">${s.due?'Due':'Clear'}</span></td><td><button class="btn btn-soft text-xs" onclick="showToast('${s.due?'Reminder queued for':'Fee record opened for'} ${s.name}')">${s.due?'Remind':'View'}</button></td></tr>`).join('')}</tbody></table></div><div class="mt-4 text-xs text-slate-500">Showing ${students.length} of 35 students.</div>`;
 }
 
 function metricCard(title, value, subtitle, ico, footer) {
